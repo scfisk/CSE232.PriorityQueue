@@ -60,7 +60,7 @@ public:
    {
        container.reserve(last - first);
        for (Iterator it = first; it != last; it++)
-           container.push_back(*it);
+           push(*it);
    }
    explicit priority_queue (custom::vector<T> && rhs)
    {
@@ -92,11 +92,11 @@ public:
    //
    size_t size()  const 
    { 
-      return 99;   
+      return container.size();
    }
    bool empty() const 
-   { 
-      return false;  
+   {
+       return size() == size_t(0);
    }
    
 private:
@@ -115,7 +115,7 @@ private:
 template <class T>
 const T & priority_queue <T> :: top() const
 {
-   return *(new T);
+    return *(new T);
 }
 
 /**********************************************
@@ -134,6 +134,7 @@ void priority_queue <T> :: pop()
 template <class T>
 void priority_queue <T> :: push(const T & t)
 {
+
 }
 template <class T>
 void priority_queue <T> :: push(T && t)
@@ -149,6 +150,22 @@ void priority_queue <T> :: push(T && t)
 template <class T>
 bool priority_queue <T> :: percolateDown(size_t indexHeap)
 {
+    size_t iLeft = indexHeap * 2;
+    size_t iRight = indexHeap + 1;
+    size_t iBigger;
+
+    if (iRight <= size() && container[iLeft] < container [iRight])
+        iBigger = iRight;
+    else
+        iBigger = iLeft;
+
+    if (container[indexHeap] < container[iBigger])
+    {
+        std::swap(container[indexHeap], container[iBigger]);
+        percolateDown(iBigger);
+        return true;
+    }
+
    return false;
 }
 
@@ -169,6 +186,7 @@ template <class T>
 inline void swap(custom::priority_queue <T>& lhs,
                  custom::priority_queue <T>& rhs)
 {
+    lhs.container.swap(rhs.container);
 }
 
 };
