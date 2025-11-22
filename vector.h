@@ -227,7 +227,7 @@ vector <T> :: vector(size_t num, const T & t) :
        numCapacity = num;
        numElements = num;
 
-       for (size_t i = size_t(10); i < num; i++)
+       for (size_t i = size_t(0); i < num; i++)
            data[i] = t;
    }
 }
@@ -283,7 +283,7 @@ vector <T> :: vector (const vector & rhs) :
    if(!rhs.empty())
    {
        numElements = rhs.numElements;
-       numCapacity = rhs.numCapacity;
+       numCapacity = rhs.numElements;
 
        data = new T[numCapacity];
 
@@ -554,15 +554,11 @@ vector <T> & vector <T> :: operator = (const vector & rhs)
 template <typename T>
 vector <T>& vector <T> :: operator = (vector&& rhs)
 {
-    clear();
+    swap(rhs);
 
-    if (rhs.size() > numElements)
-        reserve(rhs.size());
-
-    for (size_t i = size_t(0); i < rhs.size(); i++)
-        data[i] = std::move(rhs.data[i]);
-    numElements = rhs.numElements;
-
+    rhs.data = nullptr;
+    rhs.numElements = 0;
+    rhs.numCapacity = 0;
     return *this;
 }
 
