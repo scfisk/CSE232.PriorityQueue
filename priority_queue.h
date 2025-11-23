@@ -64,10 +64,13 @@ public:
    }
    explicit priority_queue (custom::vector<T> && rhs)
    {
-
+      container = std::move(rhs);
+      heapify();
    }
    explicit priority_queue (custom::vector<T>& rhs)
    {
+      container = rhs;
+      heapify();
    }
   ~priority_queue() {}
 
@@ -113,9 +116,12 @@ private:
  * Get the maximum item from the heap: the top item.
  ***********************************************/
 template <class T>
-const T & priority_queue <T> :: top() const
+const T & priority_queue<T>::top() const
 {
-    return *(new T);
+    if (container.empty())
+        throw std::out_of_range("std:out_of_range");
+
+    return container[0];
 }
 
 /**********************************************
@@ -123,9 +129,18 @@ const T & priority_queue <T> :: top() const
  * Delete the top item from the heap.
  **********************************************/
 template <class T>
-void priority_queue <T> :: pop()
+void priority_queue<T>::pop()
 {
+   if (container.empty())
+      return;
+
+   std::swap(container[0], container[container.size() - 1]);
+   container.pop_back();
+
+   if (!container.empty())
+      percolateDown(1);   // heap index of the root is 1
 }
+
 
 /*****************************************
  * P QUEUE :: PUSH
@@ -134,11 +149,51 @@ void priority_queue <T> :: pop()
 template <class T>
 void priority_queue <T> :: push(const T & t)
 {
+   // 1. Put new element at the end
+   container.push_back(t);
 
+   // 2. Percolate up
+   if (container.size() <= 1)
+      return;
+
+   size_t index = container.size() - 1;
+   while (index > 0)
+   {
+      size_t parent = (index - 1) / 2;
+
+      if (container[parent] < container[index])
+      {
+         std::swap(container[parent], container[index]);
+         index = parent;
+      }
+      else
+         break;
+   }
 }
+
 template <class T>
 void priority_queue <T> :: push(T && t)
 {
+   // 1. Move new element to the end
+   container.push_back(std::move(t));
+
+   // 2. Percolate up
+   if (container.size() <= 1)
+      return;
+
+   size_t index = container.size() - 1;
+   while (index > 0)
+   {
+      size_t parent = (index - 1) / 2;
+
+      if (container[parent] < container[index])
+      {
+         std::swap(container[parent], container[index]);
+         index = parent;
+      }
+      else
+         break;
+   }
 }
 
 /************************************************
@@ -150,44 +205,75 @@ void priority_queue <T> :: push(T && t)
 template <class T>
 bool priority_queue <T> :: percolateDown(size_t indexHeap)
 {
-    size_t iLeft = indexHeap * 2;
-    size_t iRight = indexHeap + 1;
-    size_t iBigger;
+   bool changed = false;
+   size_t n = container.size();
 
-    if (iRight <= size() && container[iLeft] < container [iRight])
-        iBigger = iRight;
-    else
-        iBigger = iLeft;
+   // indexHeap is 1-based; 0 or > n means "nothing to do"
+   if (indexHeap == 0 || indexHeap > n)
+      return false;
 
-    if (container[indexHeap] < container[iBigger])
-    {
-        std::swap(container[indexHeap], container[iBigger]);
-        percolateDown(iBigger);
-        return true;
-    }
+   while (true)
+   {
+      size_t iLeft  = indexHeap * 2;       // 1-based
+      size_t iRight = indexHeap * 2 + 1;   // 1-based
 
-   return false;
+      // no children
+      if (iLeft > n)
+         break;
+
+      // pick bigger child (still 1-based)
+      size_t iBigger = iLeft;
+      if (iRight <= n && container[iLeft - 1] < container[iRight - 1])
+         iBigger = iRight;
+
+      // if child bigger than parent, swap
+      if (container[indexHeap - 1] < container[iBigger - 1])
+      {
+         std::swap(container[indexHeap - 1], container[iBigger - 1]);
+         indexHeap = iBigger;
+         changed = true;
+      }
+      else
+      {
+         break;
+      }
+   }
+
+   return changed;
 }
+
 
 /************************************************
  * P QUEUE :: HEAPIFY
  * Turn the container into a heap.
  ************************************************/
 template <class T>
-void priority_queue <T> ::heapify()
+void priority_queue<T>::heapify()
 {
+   size_t n = container.size();
+   if (n <= 1)
+      return;
+
+   // i is a *heap index* (1-based), so internal nodes are floor(n/2) .. 1
+   for (size_t i = n / 2; i >= 1; --i)
+   {
+      percolateDown(i);
+      if (i == 1) break;   // avoid size_t underflow
+   }
 }
+
 
 /************************************************
  * SWAP
  * Swap the contents of two priority queues
  ************************************************/
 template <class T>
-inline void swap(custom::priority_queue <T>& lhs,
-                 custom::priority_queue <T>& rhs)
+inline void swap(custom::priority_queue<T>& lhs,
+                 custom::priority_queue<T>& rhs)
 {
     lhs.container.swap(rhs.container);
 }
+
 
 };
 
